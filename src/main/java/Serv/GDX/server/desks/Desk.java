@@ -2,70 +2,78 @@ package Serv.GDX.server.desks;
 
 import java.util.ArrayList;
 import java.util.Random;
-import Serv.GDX.server.GameLoop;
 import Serv.GDX.server.actors.Food;
 import Serv.GDX.server.actors.Pos;
+import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import javax.annotation.PostConstruct;
 
-public class Desk//класс поля
+
+@Data
+@Component
+public class Desk
 {
-    private ArrayList<Pos> FreeArr;//свободные ячейки
-    private Pos[][] DeskBody;
-    private Pos Tmp ;
-    private Random rnd = new Random();
+    ArrayList<Pos> freeArr= new ArrayList<>();//свободные ячейки
+    ArrayList<Pos> deskBody= new ArrayList<>();//поле
+    Pos tmpPos ;
+    Random rnd = new Random();
 
-    public int getFreeSize(){return FreeArr.size();}
+    @Value("${food.count}")
+    int foodCount;
 
-    public Pos getFree(int rnd){return FreeArr.get(rnd);}
+    @Value("${desk.size}")
+    int deskSize;
 
-    public Desk()
-    {
-        DeskBody = new  Pos[GameLoop.getSizedesk()][GameLoop.getSizedesk()];
-        FreeArr = new ArrayList<>(GameLoop.getSizedesk() * GameLoop.getSizedesk());
-        for (int i = 0; i < GameLoop.getSizedesk(); i++)
-            for (int j = 0; j < GameLoop.getSizedesk(); j++)
-            { this.Tmp = new Pos(i,j,0,true,0);
-                this.DeskBody[i][j]=this.Tmp;
-                this.FreeArr.add(this.Tmp);//заполнение свободных ячеек
+    @Autowired
+    Food food;
+
+    public int getFreeSize(){
+        return freeArr.size();
+    }
+
+    public Pos getFree(int rnd){
+        return freeArr.get(rnd);
+    }
+
+
+    @PostConstruct
+    public void init() {
+        for (int i = 0; i < deskSize; i++)
+            for (int j = 0; j < deskSize; j++)
+            {tmpPos = new Pos(i,j,0,true,0);
+             deskBody.add(tmpPos);
+             freeArr.add(tmpPos);//заполнение свободных ячеек
             }
-        AddFood(GameLoop.getFoodCount());
+        AddFood(foodCount);
     }
 
 
-    public void AddFood(int count)//создание яблока
-    { for(int i=0;i<count;i++) {
-        int Rnd = rnd.nextInt(FreeArr.size());
-        Tmp = FreeArr.get(Rnd);
-        Food.add(Tmp);
-        Setstate(Tmp, 2, 0);
+    public void AddFood(int count){//создание еды
+        for(int i=0;i<count;i++) {
+            int Rnd = rnd.nextInt(freeArr.size());
+            tmpPos = freeArr.get(Rnd);
+            food.add(tmpPos);
+            setState(tmpPos, 2, 0);
         }
-
     }
 
-    public void Setstate(Pos XY,int TR,int stateDirection)
+    public void setState(Pos XY,int TR,int stateDirection)
     {
-        if (TR==2) { this.FreeArr.remove(XY); this.setPosState(XY,TR,0);}
-        if (TR==1) { this.FreeArr.remove(XY); this.setPosState(XY,TR,stateDirection);}
-        if (TR== 0) { this.FreeArr.add(XY); this.setPosState(XY,TR,0);}
-        DeskBody[XY.getXpos()][XY.getYpos()].setChanged(true);
+        if (TR==2) { freeArr.remove(XY); XY.setState(TR);XY.setDirection(0);}
+        if (TR==1) { freeArr.remove(XY); XY.setState(TR);XY.setDirection(stateDirection);}
+        if (TR== 0) { freeArr.add(XY);XY.setState(TR);XY.setDirection(0);}
+        XY.setChanged(true);
     }
 
 
-    public boolean FreeArrContains(Pos pos)
-    {return FreeArr.contains(pos);}
+    public boolean FreeArrContains(Pos pos) {
+        return freeArr.contains(pos);
+    }
 
     public Pos getDeskPos(Pos pos){
-        return DeskBody[pos.getXpos()][pos.getYpos()];
+        return deskBody.get(deskSize*pos.getXPos()+pos.getYPos());
     }
 
-    public void setPosState(Pos pos,int TR,int stateDirection){
-        pos.setState(TR,stateDirection);
-        }
-
-    public void setPosDirection(Pos pos,int direction){
-        DeskBody[pos.getXpos()][pos.getYpos()].setDirection(direction);
-        }
-
-    public int getPosDirection(Pos pos){
-        return DeskBody[pos.getXpos()][pos.getYpos()].getDirection();
-        }
 }

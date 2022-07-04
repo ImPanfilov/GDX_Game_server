@@ -18,6 +18,7 @@ public class AppConfig {
         return new HeadlessApplication(gameLoop);
     }
 
+
     @Bean
     public Json getJson() {
         Json json = new Json();

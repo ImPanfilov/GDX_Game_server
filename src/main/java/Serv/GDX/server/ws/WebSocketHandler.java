@@ -36,7 +36,7 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         StandardWebSocketSession standardWebSocketSession = (StandardWebSocketSession) session;
         String payload = message.getPayload();
-        JsonNode jsonValue=mapper.readTree(payload);
+        //JsonNode jsonValue=mapper.readTree(payload);
         JsonNode jsonNode = mapper.readTree(payload);
         messageListener.handle(standardWebSocketSession, jsonNode);
     }

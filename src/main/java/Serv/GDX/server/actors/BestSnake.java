@@ -2,15 +2,16 @@ package Serv.GDX.server.actors;
 
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonValue;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
 
+@Data
+@NoArgsConstructor
 public class BestSnake implements Entity,Comparable<BestSnake>{
     private String name="Undefined";
     private int score=0;
     private int Id;
-    private BestSnake() {
-    }
 
     public BestSnake(String name,int score) {
         this.name=name;this.score=score;
@@ -31,23 +32,4 @@ public class BestSnake implements Entity,Comparable<BestSnake>{
     @Override
     public void read(Json json, JsonValue jsonData) {}
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getScore() {
-        return score;
-    }
-
-    public void setScore(int score) {
-        this.score = score;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setIndex(int index) {
-        Id=index;
-    }
 }
