@@ -1,13 +1,17 @@
 package Serv.GDX.server;
 
 import Serv.GDX.server.actors.*;
+import Serv.GDX.server.best.Best;
+import Serv.GDX.server.best.BestSnake;
 import Serv.GDX.server.ws.WebSocketHandler;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Json;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.adapter.standard.StandardWebSocketSession;
 import java.io.IOException;
@@ -15,12 +19,13 @@ import java.util.concurrent.ForkJoinPool;
 import Serv.GDX.server.desks.Desk;
 import com.badlogic.gdx.utils.ObjectMap;
 
+@Data
 @Component
 public class GameLoop extends ApplicationAdapter {
     private final WebSocketHandler socketHandler;
     private final Json json;
     private float lastRender=0;
-    private final ObjectMap<String,Snake> snakes=new ObjectMap<>();
+    private static final ObjectMap<String,Snake> snakes=new ObjectMap<>();
     private final Array<Entity> stateToSend=new Array<>();
     private final ForkJoinPool pool=ForkJoinPool.commonPool();
 
@@ -34,6 +39,9 @@ public class GameLoop extends ApplicationAdapter {
     Food food;
     @Autowired
     Desk desk;
+    @Autowired
+    private ApplicationContext context;
+
 
     GameLoop(WebSocketHandler socketHandler, Json json){
             this.socketHandler=socketHandler;
@@ -43,7 +51,7 @@ public class GameLoop extends ApplicationAdapter {
     @Override
     public void create() {
         socketHandler.setConnectListener(session->{
-        Snake snake=new Snake();
+        Snake snake =context.getBean(Snake.class);
         snake.setId(session.getId());
         snakes.put(session.getId(),snake);
             try {
@@ -58,7 +66,7 @@ public class GameLoop extends ApplicationAdapter {
         socketHandler.setDisconnectListener(session->{
             sendToEverybody(
                 String.format("{\"class\":\"evict\",\"id\":\"%s\"}",session.getId()));
-            snakes.get(session.getId()).free(desk);
+            snakes.get(session.getId()).Free();
             snakes.remove(session.getId());
 
         });
@@ -71,9 +79,9 @@ public class GameLoop extends ApplicationAdapter {
                 snake.setStateKey(message.get("stateKey").asInt());
                 break;
             case "name":
-                Snake newSnake=snakes.get(session.getId());
-                newSnake.setName(message.get("name").asText());
-                newSnake.Fill(desk);
+                //Snake newSnake=snakes.get(session.getId());
+                snakes.get(session.getId()).setName(message.get("name").asText());
+                snakes.get(session.getId()).Fill();
                 break;
             default:
                 throw new RuntimeException("Unknown WS object type" +type);
@@ -88,10 +96,10 @@ public class GameLoop extends ApplicationAdapter {
                 stateToSend.clear();
                for (ObjectMap.Entry<String,Snake> snakeEntry:snakes) {
                    Snake snake1=snakeEntry.value;
-                   snake1.Step(desk);
+                   snake1.Step();
                    stateToSend.add(snake1);
                    }
-                for (BestSnake best:Best.getBest()) {
+                for (BestSnake best: Best.getBest()) {
                     stateToSend.add(best);
                     }
                 stateToSend.add(food);
@@ -101,7 +109,7 @@ public class GameLoop extends ApplicationAdapter {
                 }
     }
 
-    private void sendToEverybody(String json)
+    public void sendToEverybody(String json)
     {
         pool.execute(() -> {
             for (StandardWebSocketSession session : socketHandler.getSessions()) {
@@ -116,5 +124,14 @@ public class GameLoop extends ApplicationAdapter {
         });
     }
 
+
+    public static void InitSnakes() {
+        for (ObjectMap.Entry<String, Snake> snakeEntry:snakes) {
+            Best.addBest(snakeEntry.value.getName(),snakeEntry.value.getScore());
+            snakeEntry.value.setScore(0);
+            snakeEntry.value.Free();
+            snakeEntry.value.Fill();
+        }
+    }
 }
 

@@ -1,5 +1,6 @@
-package Serv.GDX.server.actors;
+package Serv.GDX.server.best;
 
+import Serv.GDX.server.actors.Entity;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.JsonValue;
 import lombok.Data;

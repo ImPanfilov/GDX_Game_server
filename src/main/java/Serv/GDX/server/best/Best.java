@@ -1,4 +1,4 @@
-package Serv.GDX.server.actors;
+package Serv.GDX.server.best;
 
 
 import lombok.Data;

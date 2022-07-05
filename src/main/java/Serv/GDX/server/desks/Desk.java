@@ -2,21 +2,25 @@ package Serv.GDX.server.desks;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import Serv.GDX.server.actors.Food;
 import Serv.GDX.server.actors.Pos;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 
 
 @Data
 @Component
+@Scope("singleton")
 public class Desk
 {
-    ArrayList<Pos> freeArr= new ArrayList<>();//свободные ячейки
-    ArrayList<Pos> deskBody= new ArrayList<>();//поле
+    CopyOnWriteArrayList<Pos> freeArr= new CopyOnWriteArrayList<Pos>();//свободные ячейки
+    CopyOnWriteArrayList<Pos> deskBody= new CopyOnWriteArrayList<Pos>();//поле
     Pos tmpPos ;
     Random rnd = new Random();
 
@@ -40,13 +44,18 @@ public class Desk
 
     @PostConstruct
     public void init() {
-        for (int i = 0; i < deskSize; i++)
-            for (int j = 0; j < deskSize; j++)
-            {tmpPos = new Pos(i,j,0,true,0);
-             deskBody.add(tmpPos);
-             freeArr.add(tmpPos);//заполнение свободных ячеек
-            }
-        AddFood(foodCount);
+        synchronized (freeArr) {
+            freeArr.clear();
+            deskBody.clear();
+            for (int i = 0; i < deskSize; i++)
+                for (int j = 0; j < deskSize; j++) {
+                    tmpPos = new Pos(i, j, 0, true, 0);
+                    deskBody.add(tmpPos);
+                    freeArr.add(tmpPos);//заполнение свободных ячеек
+                }
+            ClearFood();
+            AddFood(foodCount);
+        }
     }
 
 
@@ -56,15 +65,36 @@ public class Desk
             tmpPos = freeArr.get(Rnd);
             food.add(tmpPos);
             setState(tmpPos, 2, 0);
-        }
+            }
     }
 
-    public void setState(Pos XY,int TR,int stateDirection)
-    {
-        if (TR==2) { freeArr.remove(XY); XY.setState(TR);XY.setDirection(0);}
-        if (TR==1) { freeArr.remove(XY); XY.setState(TR);XY.setDirection(stateDirection);}
-        if (TR== 0) { freeArr.add(XY);XY.setState(TR);XY.setDirection(0);}
-        XY.setChanged(true);
+    public void ClearFood() {
+        for (Pos pos : food.getFoodArr()) {
+            freeArr.remove(pos);
+            setState(tmpPos, 0, 0);
+        }
+        food.clear();
+    }
+
+    public void setState(Pos XY,int TR,int stateDirection) {
+        synchronized (freeArr) {
+            if (TR == 2) {
+                freeArr.remove(XY);
+                XY.setState(TR);
+                XY.setDirection(0);
+            }
+            if (TR == 1) {
+                freeArr.remove(XY);
+                XY.setState(TR);
+                XY.setDirection(stateDirection);
+            }
+            if (TR == 0) {
+                freeArr.add(XY);
+                XY.setState(TR);
+                XY.setDirection(0);
+            }
+            XY.setChanged(true);
+        }
     }
 
 

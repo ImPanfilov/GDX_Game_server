@@ -1,7 +1,7 @@
 package Serv.GDX.server.config;
 
 import Serv.GDX.server.GameLoop;
-import Serv.GDX.server.actors.BestSnake;
+import Serv.GDX.server.best.BestSnake;
 import Serv.GDX.server.actors.Pos;
 import Serv.GDX.server.actors.Snake;
 import Serv.GDX.server.actors.Food;
@@ -18,7 +18,6 @@ public class AppConfig {
         return new HeadlessApplication(gameLoop);
     }
 
-
     @Bean
     public Json getJson() {
         Json json = new Json();
@@ -29,7 +28,6 @@ public class AppConfig {
         json.addClassTag("best", BestSnake.class);
         return json;
     }
-
 
 }
 
